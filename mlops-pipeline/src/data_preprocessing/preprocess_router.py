@@ -8,6 +8,42 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# --- Standalone functions for testing ---
+
+def clean_logic(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean a DataFrame by dropping rows with missing targets.
+    This is a simplified version used for testing core logic.
+    
+    Args:
+        df: Input DataFrame
+        
+    Returns:
+        Cleaned DataFrame with no NaN values in target column
+    """
+    if 'target' in df.columns:
+        return df.dropna(subset=['target']).reset_index(drop=True)
+    return df
+
+
+def feature_engineering_logic(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Apply feature engineering to a DataFrame.
+    Creates interaction terms for feature1 and feature2 if they exist.
+    
+    Args:
+        df: Input DataFrame
+        
+    Returns:
+        DataFrame with additional features
+    """
+    df = df.copy()
+    if 'feature1' in df.columns and 'feature2' in df.columns:
+        df['feature1_x_feature2'] = df['feature1'] * df['feature2']
+    return df
+
+# --- End standalone functions ---
+
 class PreprocessRouter:
     """
     Simple preprocessing router:

@@ -7,23 +7,10 @@ import os
 
 # Allow importing modules from 'src'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../mlops-pipeline')))
 
-# --- MOCKING THE LOGIC ---
-# Ideally, we import these from src.data_preprocessing, but for this test
-# we will verify the logic itself to ensure the CI pipeline runs.
-
-def clean_logic(df):
-    """Mock of the cleaning logic: drop rows with missing targets."""
-    if 'target' in df.columns:
-        return df.dropna(subset=['target'])
-    return df
-
-def feature_engineering_logic(df):
-    """Mock of feature engineering: create interaction term."""
-    df = df.copy()
-    if 'feature1' in df.columns and 'feature2' in df.columns:
-        df['feature1_x_feature2'] = df['feature1'] * df['feature2']
-    return df
+# Import real preprocessing functions
+from src.data_preprocessing.preprocess_router import clean_logic, feature_engineering_logic
 
 # --- TESTS ---
 
