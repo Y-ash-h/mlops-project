@@ -93,21 +93,17 @@ services:
 
   model-serving:
     build:
-      context: ./model-serving
-      dockerfile: Dockerfile
-    image: model-serving:latest
+      context: .
+      dockerfile: Dockerfile.serving
+    container_name: mlops_model_serving
     restart: always
     ports:
       - "8000:8000"
-    environment:
-      - MODEL_NAME=tabular_model
-      - MODEL_STAGE=Production
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - AWS_ACCESS_KEY_ID=minio
-      - AWS_SECRET_ACCESS_KEY=minio123
-      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+    volumes:
+      # Mount the same pipeline volume so it can read the .pkl file
+      - ./mlops-pipeline:/opt/airflow/mlops-pipeline
     depends_on:
-      - mlflow
+      - airflow
 
 
 
