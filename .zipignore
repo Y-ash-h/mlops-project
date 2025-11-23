@@ -1,0 +1,12 @@
+airflow/logs/*
+mlruns/*
+__pycache__/*
+*.pyc
+.venv/*
+venv/*
+tmp/*
+*.log
+docker_volumes/*
+*/__pycache__/*
+opt/airflow/logs/*
+opt/airflow/mlruns/*

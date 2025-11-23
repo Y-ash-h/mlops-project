@@ -1,0 +1,14 @@
+reference_data_path: "/opt/airflow/mlops-pipeline/data/train.csv"
+current_data_path: "/opt/airflow/mlops-pipeline/data/validation.csv"
+
+target_column: "target"
+
+report_output_html: "/opt/airflow/mlops-pipeline/data/monitoring/drift_report.html"
+report_output_json: "/opt/airflow/mlops-pipeline/data/monitoring/drift_report.json"
+
+features:
+  numerical:
+    - feature_1
+    - feature_2
+    - feature_1_x_feature_2
+  categorical: []

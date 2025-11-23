@@ -1,0 +1,117 @@
+services:
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+      POSTGRES_DB: mlflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    ports:
+      - "5050:5000"
+    depends_on:
+      - postgres
+      - minio
+    command: >
+      mlflow server
+        --backend-store-uri sqlite:///mlflow.db
+        --default-artifact-root /mlflow-artifacts
+        --host 0.0.0.0
+        --port 5000
+        --workers 4
+        --allowed-hosts="*"
+        --cors-allowed-origins="*"
+    volumes:
+      - ./mlflow-data:/mlflow-artifacts
+
+
+
+  airflow:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    image: custom-airflow:latest
+    restart: always
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
+      airflow scheduler &
+      airflow webserver
+      "
+    ports:
+      - "8099:8080"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - DATA_DIR=/opt/airflow/mlops-pipeline/data
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_EXPERIMENT_NAME=demo_experiment
+      - MLFLOW_ARTIFACT_PATH=model
+      - LABEL_COLUMN=target
+      - MODEL_REGISTRY_NAME=tabular_model
+      - PROMOTE_ON_IMPROVEMENT=true
+      - ALLOW_FEATURE_SUBSET=false
+      - ALLOW_COLUMN_REORDER=true
+      - SLACK_WEBHOOK=${SLACK_WEBHOOK:-}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./mlops-pipeline:/opt/airflow/mlops-pipeline
+      - ./training:/opt/airflow/training
+      - ./mlflow-data:/mlflow-artifacts # for MLflow tracking
+      - ./data/raw:/opt/airflow/mlops-pipeline/data/raw
+    depends_on:
+      - postgres
+      - minio
+      - mlflow
+
+  model-serving:
+    build:
+      context: ./model-serving
+      dockerfile: Dockerfile
+    image: model-serving:latest
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_NAME=tabular_model
+      - MODEL_STAGE=Production
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=minio
+      - AWS_SECRET_ACCESS_KEY=minio123
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+    depends_on:
+      - mlflow
+
+
+
+
+volumes:
+  minio-data:
+  pgdata:

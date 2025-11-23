@@ -1,0 +1,17 @@
+FROM python:3.10-slim
+
+# Install dependencies once during image build
+RUN pip install --no-cache-dir mlflow boto3 psycopg2-binary sqlalchemy
+
+# Expose MLflow port
+EXPOSE 5000
+
+# Set environment for MinIO connection
+ENV AWS_ACCESS_KEY_ID=minio \
+    AWS_SECRET_ACCESS_KEY=minio123 \
+    MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+
+CMD mlflow server \
+    --backend-store-uri postgresql://mlflow:mlflow@postgres:5432/mlflow \
+    --default-artifact-root s3://mlflow/ \
+    --host 0.0.0.0 --port 5000
