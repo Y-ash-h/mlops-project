@@ -15,6 +15,8 @@ sys.modules["airflow.operators.dummy_operator"] = MagicMock()
 sys.modules["airflow.operators.bash"] = MagicMock()
 
 # Mock other heavy dependencies
+# NOTE: pandas and numpy are NOT mocked here because they're needed by other tests
+# and are already installed in CI. Only mock modules that are NOT in CI dependencies.
 sys.modules["matplotlib"] = MagicMock()
 sys.modules["matplotlib.pyplot"] = MagicMock()
 sys.modules["mlflow"] = MagicMock()
@@ -29,8 +31,7 @@ sys.modules["sklearn.ensemble"] = MagicMock()
 sys.modules["shap"] = MagicMock()
 sys.modules["lightgbm"] = MagicMock()
 sys.modules["xgboost"] = MagicMock()
-sys.modules["pandas"] = MagicMock()
-sys.modules["numpy"] = MagicMock()
+# Do NOT mock pandas/numpy - they're needed by test_preprocessing.py
 
 # Mock DAG context manager
 mock_dag = MagicMock()
@@ -68,7 +69,6 @@ class TestDAGLogicLocal(unittest.TestCase):
             # We expect 'skip_explain' because data/raw has 1 csv -> text (or empty)
             self.assertEqual(result, 'skip_explain')
 
-    @unittest.skipIf(IN_CI, "Skipping DAG tests in CI environment (requires Airflow)")
     @unittest.skipIf(IN_CI, "Skipping DAG tests in CI (requires full Airflow environment)")
     @patch("ml_training_dag.mlflow")
     def test_ml_training_dag_defensive_check(self, mock_mlflow_local):
