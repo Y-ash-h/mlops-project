@@ -18,14 +18,12 @@ def send_slack(text: str, channel: Optional[str] = None, blocks: Optional[list] 
         blocks: Optional Slack blocks for rich formatting
         
     Returns:
-        True if message sent successfully
-        
-    Raises:
-        RuntimeError: If SLACK_WEBHOOK env var not set
+        True if message sent successfully, False if webhook not configured or error occurred
     """
     webhook = SLACK_WEBHOOK
     if not webhook:
-        raise RuntimeError("SLACK_WEBHOOK env var not set")
+        print("SLACK_WEBHOOK env var not set, skipping Slack notification")
+        return False
     
     payload = {"text": text}
     if channel:
@@ -33,8 +31,12 @@ def send_slack(text: str, channel: Optional[str] = None, blocks: Optional[list] 
     if blocks:
         payload["blocks"] = blocks
     
-    resp = requests.post(webhook, json=payload, timeout=10)
-    return resp.status_code == 200
+    try:
+        resp = requests.post(webhook, json=payload, timeout=10)
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"Failed to send Slack notification: {e}")
+        return False
 
 
 def alert_validation_fail(run_id: str, model_name: str, metric_name: str, metric_value: float) -> bool:
